@@ -1,31 +1,67 @@
 package com.example.eventregistration
 
+import android.media.MediaPlayer
 import android.os.Bundle
-import android.widget.Button
-import android.widget.EditText
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
+import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.RecyclerView
 
 class MainActivity : AppCompatActivity() {
+
+    private var mediaPlayer: MediaPlayer? = null
+    private var playingRhythm: String? = null
+    private var adapter: RhythmAdapter? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
-        val nameField = findViewById<EditText>(R.id.editName)
-        val emailField = findViewById<EditText>(R.id.editEmail)
-        val registerButton = findViewById<Button>(R.id.btnRegister)
+        val rhythms = listOf(
+            Rhythm("Saidi", null),
+            Rhythm("Baladi", null),
+            Rhythm("Karşilama", R.raw.karsilama)
+        )
 
-        registerButton.setOnClickListener {
-            val name = nameField.text.toString().trim()
-            val email = emailField.text.toString().trim()
-            if (name.isEmpty() || email.isEmpty()) {
-                Toast.makeText(this, "Please fill in all fields", Toast.LENGTH_SHORT).show()
-            } else {
-                Toast.makeText(this, "Registered: $name", Toast.LENGTH_SHORT).show()
-                nameField.text.clear()
-                emailField.text.clear()
-            }
+        adapter = RhythmAdapter(rhythms) { rhythm ->
+            onRhythmSelected(rhythm)
         }
+
+        val recyclerView = findViewById<RecyclerView>(R.id.rhythmList)
+        recyclerView.layoutManager = LinearLayoutManager(this)
+        recyclerView.adapter = adapter
+    }
+
+    private fun onRhythmSelected(rhythm: Rhythm) {
+        if (rhythm.soundRes == null) {
+            Toast.makeText(this, "${rhythm.name}: coming soon", Toast.LENGTH_SHORT).show()
+            return
+        }
+
+        if (playingRhythm == rhythm.name) {
+            stopPlayback()
+            adapter?.setPlaying(null)
+            return
+        }
+
+        stopPlayback()
+        mediaPlayer = MediaPlayer.create(this, rhythm.soundRes).apply {
+            isLooping = true
+            start()
+        }
+        playingRhythm = rhythm.name
+        adapter?.setPlaying(rhythm.name)
+    }
+
+    private fun stopPlayback() {
+        mediaPlayer?.stop()
+        mediaPlayer?.release()
+        mediaPlayer = null
+        playingRhythm = null
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        stopPlayback()
     }
 }
