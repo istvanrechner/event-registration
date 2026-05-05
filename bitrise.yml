@@ -1,0 +1,28 @@
+format_version: "13"
+default_step_lib_source: https://github.com/bitrise-io/bitrise-steplib.git
+
+app:
+  envs:
+  - GRADLE_BUILD_FILE_PATH: build.gradle.kts
+  - GRADLEW_PATH: ./gradlew
+  - MODULE: app
+  - VARIANT: debug
+
+workflows:
+  build:
+    steps:
+    - script@1:
+        title: Build debug APK
+        inputs:
+        - content: |-
+            #!/bin/bash
+            set -ex
+            cd ~/android-app
+            ./gradlew assembleDebug --no-daemon
+    - script@1:
+        title: Show APK output
+        inputs:
+        - content: |-
+            #!/bin/bash
+            set -ex
+            find ~/android-app/app/build/outputs/apk -name "*.apk" 2>/dev/null
