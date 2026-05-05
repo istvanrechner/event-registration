@@ -2,7 +2,6 @@ package com.example.eventregistration
 
 import android.media.MediaPlayer
 import android.os.Bundle
-import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
@@ -10,7 +9,7 @@ import androidx.recyclerview.widget.RecyclerView
 class MainActivity : AppCompatActivity() {
 
     private var mediaPlayer: MediaPlayer? = null
-    private var playingRhythm: String? = null
+    private var playingKey: String? = null
     private var adapter: RhythmAdapter? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -18,46 +17,54 @@ class MainActivity : AppCompatActivity() {
         setContentView(R.layout.activity_main)
 
         val rhythms = listOf(
-            Rhythm("Saidi", null),
-            Rhythm("Baladi", null),
-            Rhythm("Karşilama", R.raw.karsilama)
+            Rhythm("Saidi", emptyList()),
+            Rhythm("Baladi", emptyList()),
+            Rhythm(
+                "Karşilama", listOf(
+                    Variation("All Variations", R.raw.karsilama_all_variations),
+                    Variation("01", R.raw.karsilama_01),
+                    Variation("02", R.raw.karsilama_02),
+                    Variation("03", R.raw.karsilama_03),
+                    Variation("04", R.raw.karsilama_04),
+                    Variation("05", R.raw.karsilama_05),
+                    Variation("Voice", R.raw.karsilama_voice),
+                )
+            )
         )
 
-        adapter = RhythmAdapter(rhythms) { rhythm ->
-            onRhythmSelected(rhythm)
+        adapter = RhythmAdapter(rhythms) { rhythmName, variation ->
+            onVariationSelected(rhythmName, variation)
         }
 
-        val recyclerView = findViewById<RecyclerView>(R.id.rhythmList)
-        recyclerView.layoutManager = LinearLayoutManager(this)
-        recyclerView.adapter = adapter
+        findViewById<RecyclerView>(R.id.rhythmList).apply {
+            layoutManager = LinearLayoutManager(this@MainActivity)
+            adapter = this@MainActivity.adapter
+        }
     }
 
-    private fun onRhythmSelected(rhythm: Rhythm) {
-        if (rhythm.soundRes == null) {
-            Toast.makeText(this, "${rhythm.name}: coming soon", Toast.LENGTH_SHORT).show()
-            return
-        }
+    private fun onVariationSelected(rhythmName: String, variation: Variation) {
+        val key = "$rhythmName/${variation.label}"
 
-        if (playingRhythm == rhythm.name) {
+        if (playingKey == key) {
             stopPlayback()
             adapter?.setPlaying(null)
             return
         }
 
         stopPlayback()
-        mediaPlayer = MediaPlayer.create(this, rhythm.soundRes).apply {
+        mediaPlayer = MediaPlayer.create(this, variation.soundRes!!).apply {
             isLooping = true
             start()
         }
-        playingRhythm = rhythm.name
-        adapter?.setPlaying(rhythm.name)
+        playingKey = key
+        adapter?.setPlaying(key)
     }
 
     private fun stopPlayback() {
         mediaPlayer?.stop()
         mediaPlayer?.release()
         mediaPlayer = null
-        playingRhythm = null
+        playingKey = null
     }
 
     override fun onDestroy() {
